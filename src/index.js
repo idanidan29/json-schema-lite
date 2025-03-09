@@ -54,7 +54,7 @@ const validateSchema = (schemaNode, instanceNode) => {
         // For a boolean schema, just return the result.
         return new Output(schemaNode.value, schemaNode, instanceNode);
       case "object": {
-        // In detailed mode, we accumulate errors instead of only toggling a flag.
+        // In detailed mode we accumulate errors
         const errors = [];
         for (const propertyNode of schemaNode.children) {
           const [keywordNode, keywordValueNode] = propertyNode.children;
@@ -151,35 +151,50 @@ keywordHandlers.set("additionalProperties", (additionalPropertiesNode, instanceN
   return new Output(isValid, additionalPropertiesNode, instanceNode);
 });
 
+
 /** @type (string: string) => string */
 const regexEscape = (string) => string
   .replace(/[|\\{}()[\]^$+*?.]/g, "\\$&")
   .replace(/-/g, "\\x2d");
 
+/**
+ * Keyword handler for "allOf".
+ * @param {JsonNode} allOfNode - The "allOf" keyword node containing an array of subschemas.
+ * @param {JsonNode} instanceNode - The instance node being validated.
+ * @returns {Output} Detailed Output for "allOf" that includes aggregated errors from subschemas.
+ */
 keywordHandlers.set("allOf", (allOfNode, instanceNode) => {
   assertNodeType(allOfNode, "array");
-
-  let isValid = true;
+  const errors = [];
   for (const schemaNode of allOfNode.children) {
-    if (!validateSchema(schemaNode, instanceNode).valid) {
-      isValid = false;
+    const result = validateSchema(schemaNode, instanceNode);
+    if (!result.valid) {
+      errors.push(result);
     }
   }
-
-  return new Output(isValid, allOfNode, instanceNode);
+  const isValid = errors.length === 0;
+  return new Output(isValid, allOfNode, instanceNode, errors);
 });
 
+/**
+ * Keyword handler for "anyOf".
+ * @param {JsonNode} anyOfNode - The "anyOf" keyword node containing an array of subschemas.
+ * @param {JsonNode} instanceNode - The instance node being validated.
+ * @returns {Output} Detailed Output for "anyOf" that includes error details if validation fails.
+ */
 keywordHandlers.set("anyOf", (anyOfNode, instanceNode) => {
   assertNodeType(anyOfNode, "array");
-
-  let isValid = false;
+  const errors = [];
+  let validFound = false;
   for (const schemaNode of anyOfNode.children) {
     const schemaOutput = validateSchema(schemaNode, instanceNode);
     if (schemaOutput.valid) {
-      isValid = true;
+      validFound = true;
+    } else {
+      errors.push(schemaOutput);
     }
   }
-  return new Output(isValid, anyOfNode, instanceNode);
+  return new Output(validFound, anyOfNode, instanceNode, errors);
 });
 
 keywordHandlers.set("oneOf", (oneOfNode, instanceNode) => {
