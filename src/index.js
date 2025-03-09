@@ -118,7 +118,7 @@ keywordHandlers.set("additionalProperties", (additionalPropertiesNode, instanceN
   }
 
   const propertyPatterns = [];
-
+  // Collect defined property names from the "properties" keyword.
   if (jsonObjectHas("properties", schemaNode)) {
     const propertiesNode = jsonPointerStep("properties", schemaNode);
     if (propertiesNode.jsonType === "object") {
@@ -127,28 +127,31 @@ keywordHandlers.set("additionalProperties", (additionalPropertiesNode, instanceN
       }
     }
   }
-
+  // Collect patterns from the "patternProperties" keyword.
   if (jsonObjectHas("patternProperties", schemaNode)) {
     const patternPropertiesNode = jsonPointerStep("patternProperties", schemaNode);
     if (patternPropertiesNode.jsonType === "object") {
       propertyPatterns.push(...jsonObjectKeys(patternPropertiesNode));
     }
   }
-
+  // Create a regex to match properties defined by the schema.
   const isDefinedProperty = new RegExp(propertyPatterns.length > 0 ? propertyPatterns.join("|") : "(?!)", "u");
 
   let isValid = true;
+  const errors = [];
+  // Iterate over each property in the instance object.
   for (const propertyNode of instanceNode.children) {
     const [propertyNameNode, instancePropertyNode] = propertyNode.children;
     if (!isDefinedProperty.test(propertyNameNode.value)) {
+      // Validate the property using the additionalProperties schema.
       const schemaOutput = validateSchema(additionalPropertiesNode, instancePropertyNode);
       if (!schemaOutput.valid) {
         isValid = false;
+        errors.push(schemaOutput);
       }
     }
   }
-
-  return new Output(isValid, additionalPropertiesNode, instanceNode);
+  return new Output(isValid, additionalPropertiesNode, instanceNode, errors);
 });
 
 
@@ -159,8 +162,8 @@ const regexEscape = (string) => string
 
 /**
  * Keyword handler for "allOf".
- * @param {JsonNode} allOfNode - The "allOf" keyword node containing an array of subschemas.
- * @param {JsonNode} instanceNode - The instance node being validated.
+ * @param {JsonNode} allOfNode - containing an array of subschemas.
+ * @param {JsonNode} instanceNode - instance node being validated.
  * @returns {Output} Detailed Output for "allOf" that includes aggregated errors from subschemas.
  */
 keywordHandlers.set("allOf", (allOfNode, instanceNode) => {
@@ -178,7 +181,7 @@ keywordHandlers.set("allOf", (allOfNode, instanceNode) => {
 
 /**
  * Keyword handler for "anyOf".
- * @param {JsonNode} anyOfNode - The "anyOf" keyword node containing an array of subschemas.
+ * @param {JsonNode} anyOfNode - containing an array of subschemas.
  * @param {JsonNode} instanceNode - The instance node being validated.
  * @returns {Output} Detailed Output for "anyOf" that includes error details if validation fails.
  */
