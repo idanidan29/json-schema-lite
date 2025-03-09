@@ -51,24 +51,26 @@ const validateSchema = (schemaNode, instanceNode) => {
   if (schemaNode.type === "json") {
     switch (schemaNode.jsonType) {
       case "boolean":
+        // For a boolean schema, just return the result.
         return new Output(schemaNode.value, schemaNode, instanceNode);
-      case "object":
-        let isValid = true;
+      case "object": {
+        // In detailed mode, we accumulate errors instead of only toggling a flag.
+        const errors = [];
         for (const propertyNode of schemaNode.children) {
           const [keywordNode, keywordValueNode] = propertyNode.children;
           const keywordHandler = keywordHandlers.get(keywordNode.value);
           if (keywordHandler) {
             const keywordOutput = keywordHandler(keywordValueNode, instanceNode, schemaNode);
             if (!keywordOutput.valid) {
-              isValid = false;
+              errors.push(keywordOutput);
             }
           }
         }
-
-        return new Output(isValid, schemaNode, instanceNode);
+        const isValid = errors.length === 0;
+        return new Output(isValid, schemaNode, instanceNode, errors);
+      }
     }
   }
-
   throw Error("Invalid Schema");
 };
 
