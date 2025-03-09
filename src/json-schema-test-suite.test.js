@@ -1,3 +1,4 @@
+
 import { readdir, readFile } from "node:fs/promises";
 import { describe, test, expect, beforeAll } from "vitest";
 import { toAbsoluteIri } from "@hyperjump/uri";
@@ -78,8 +79,8 @@ const testSuiteFilePath = `${testSuitePath}/tests/${draft}`;
 const addRemotes = async (filePath, url) => {
   for (const entry of await readdir(filePath, { withFileTypes: true })) {
     if (entry.isFile() && entry.name.endsWith(".json")) {
-      /** @type JsonObject */
-      const remote = JSON.parse(await readFile(`${filePath}/${entry.name}`, "utf8")); // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+      /** @type {import("./jsonast.d.ts").JsonObject} */
+      const remote = JSON.parse(await readFile(`${filePath}/${entry.name}`, "utf8"));// eslint-disable-line @typescript-eslint/no-unsafe-assignment
       if (typeof remote.$schema !== "string" || toAbsoluteIri(remote.$schema) === dialectUri) {
         registerSchema(remote, `${url}/${basename(entry.name, ".schema.json")}`);
       }
@@ -123,7 +124,17 @@ describe(draft, async () => {
 
             test(schemaTest.description, () => {
               const output = validate(suite.schema, schemaTest.data);
-              expect(output.valid).to.equal(schemaTest.valid);
+              expect(output.valid).toEqual(schemaTest.valid);
+              if (!schemaTest.valid) {
+                expect(output.errors).toBeInstanceOf(Array);
+                // @ts-ignore
+                expect(output.errors.length).toBeGreaterThan(0);
+                // @ts-ignore
+                output.errors.forEach((error) => {
+                  expect(error).toHaveProperty("absoluteKeywordLocation");
+                  expect(error).toHaveProperty("instanceLocation");
+                });
+              }
             });
           }
         });

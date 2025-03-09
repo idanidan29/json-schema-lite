@@ -51,10 +51,17 @@ const validateSchema = (schemaNode, instanceNode) => {
   if (schemaNode.type === "json") {
     switch (schemaNode.jsonType) {
       case "boolean":
-        // For a boolean schema, just return the result.
-        return new Output(schemaNode.value, schemaNode, instanceNode);
+        if (schemaNode.value === true) {
+          // When the boolean schema is true, the instance is always valid.
+          return new Output(true, schemaNode, instanceNode, []);
+        } else {
+          // When the boolean schema is false, the instance is always invalid.
+          // We create a dummy error output to ensure the errors array is not empty.
+          const dummyError = new Output(false, schemaNode, instanceNode, []);
+          return new Output(false, schemaNode, instanceNode, [dummyError]);
+        }
       case "object": {
-        // In detailed mode we accumulate errors
+        // Accumulate detailed errors from each failing keyword.
         const errors = [];
         for (const propertyNode of schemaNode.children) {
           const [keywordNode, keywordValueNode] = propertyNode.children;
@@ -69,10 +76,13 @@ const validateSchema = (schemaNode, instanceNode) => {
         const isValid = errors.length === 0;
         return new Output(isValid, schemaNode, instanceNode, errors);
       }
+      default:
+        throw new Error("Invalid schema jsonType");
     }
   }
-  throw Error("Invalid Schema");
+  throw new Error("Invalid Schema");
 };
+
 
 /** @type Map<string, JsonNode> */
 const schemaRegistry = new Map();
