@@ -1,3 +1,4 @@
+
 import { readdir, readFile } from "node:fs/promises";
 import { describe, test, expect, beforeAll } from "vitest";
 import { toAbsoluteIri } from "@hyperjump/uri";
@@ -126,10 +127,8 @@ describe(draft, async () => {
               expect(output.valid).toEqual(schemaTest.valid);
               if (!schemaTest.valid) {
                 expect(output.errors).toBeInstanceOf(Array);
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 expect(output.errors.length).toBeGreaterThan(0);
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 output.errors.forEach((error) => {
                   expect(error).toHaveProperty("absoluteKeywordLocation");
