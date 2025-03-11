@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 import { readdir, readFile } from "node:fs/promises";
 import { describe, test, expect, beforeAll } from "vitest";
 import { toAbsoluteIri } from "@hyperjump/uri";
@@ -73,7 +75,6 @@ const testSuitePath = "./node_modules/json-schema-test-suite";
 const draft = "draft2020-12";
 const dialectUri = "https://json-schema.org/draft/2020-12/schema";
 const testSuiteFilePath = `${testSuitePath}/tests/${draft}`;
-
 /** @type (filePath: string, uri: string) => Promise<void> */
 const addRemotes = async (filePath, url) => {
   for (const entry of await readdir(filePath, { withFileTypes: true })) {
@@ -88,7 +89,7 @@ const addRemotes = async (filePath, url) => {
     }
   }
 };
-
+// Main test suite execution
 describe(draft, async () => {
   beforeAll(async () => {
     await addRemotes(`${testSuitePath}/remotes`, "http://localhost:1234");
@@ -126,11 +127,7 @@ describe(draft, async () => {
               expect(output.valid).toEqual(schemaTest.valid);
               if (!schemaTest.valid) {
                 expect(output.errors).toBeInstanceOf(Array);
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
                 expect(output.errors.length).toBeGreaterThan(0);
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
                 output.errors.forEach((error) => {
                   expect(error).toHaveProperty("absoluteKeywordLocation");
                   expect(error).toHaveProperty("instanceLocation");
