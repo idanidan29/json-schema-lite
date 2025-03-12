@@ -129,13 +129,12 @@ describe(draft, async () => {
               // Existing validation
               expect(output.valid).to.equal(schemaTest.valid);
 
-              // New tests for detailed format
+              // for detailed format
               if (output.valid) {
-                // Ensure the output contains `absoluteKeywordLocation` and `instanceLocation`
                 expect(output.absoluteKeywordLocation).toBeDefined();
                 expect(output.instanceLocation).toBeDefined();
               } else {
-                // For errors, you can check if errors have detailed information
+                // checking if errors have detailed info
                 output.errors.forEach((error) => {
                   expect(error.absoluteKeywordLocation).toBeDefined();
                   expect(error.instanceLocation).toBeDefined();
