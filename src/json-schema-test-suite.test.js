@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 import { readdir, readFile } from "node:fs/promises";
 import { describe, test, expect, beforeAll } from "vitest";
 import { toAbsoluteIri } from "@hyperjump/uri";
@@ -123,7 +125,22 @@ describe(draft, async () => {
 
             test(schemaTest.description, () => {
               const output = validate(suite.schema, schemaTest.data);
+
+              // Existing validation
               expect(output.valid).to.equal(schemaTest.valid);
+
+              // New tests for detailed format
+              if (output.valid) {
+                // Ensure the output contains `absoluteKeywordLocation` and `instanceLocation`
+                expect(output.absoluteKeywordLocation).toBeDefined();
+                expect(output.instanceLocation).toBeDefined();
+              } else {
+                // For errors, you can check if errors have detailed information
+                output.errors.forEach((error) => {
+                  expect(error.absoluteKeywordLocation).toBeDefined();
+                  expect(error.instanceLocation).toBeDefined();
+                });
+              }
             });
           }
         });

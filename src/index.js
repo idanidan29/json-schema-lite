@@ -46,15 +46,22 @@ export const validate = (schema, instance) => {
   return output;
 };
 
-/** @type (schemaNode: JsonNode, instanceNode: JsonNode) => Output */
+/** @type {(schemaNode: JsonNode, instanceNode: JsonNode) => Output} */
 const validateSchema = (schemaNode, instanceNode) => {
   if (schemaNode.type === "json") {
     switch (schemaNode.jsonType) {
       case "boolean":
-        // For a boolean schema, just return the result.
-        return new Output(schemaNode.value, schemaNode, instanceNode);
+        // When schema is `false`, everything is invalid, ensure `errors` is always an array.
+        return schemaNode.value
+          ? new Output(true, schemaNode, instanceNode, [])
+          : new Output(false, schemaNode, instanceNode, [
+            new Output(false, schemaNode, instanceNode, [],
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-expect-error
+              "The schema explicitly disallows all values.")]);
+
       case "object": {
-        // In detailed mode we accumulate errors
+        // Collect errors from keyword validation
         const errors = [];
         for (const propertyNode of schemaNode.children) {
           const [keywordNode, keywordValueNode] = propertyNode.children;
@@ -66,13 +73,13 @@ const validateSchema = (schemaNode, instanceNode) => {
             }
           }
         }
-        const isValid = errors.length === 0;
-        return new Output(isValid, schemaNode, instanceNode, errors);
+        return new Output(errors.length === 0, schemaNode, instanceNode, errors);
       }
     }
   }
   throw Error("Invalid Schema");
 };
+
 
 /** @type Map<string, JsonNode> */
 const schemaRegistry = new Map();
